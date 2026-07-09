@@ -2,17 +2,19 @@
 
 Zero-dependency validation, sanitization, hashing, and JWT helpers for TypeScript.
 
-OmniGuard is a compact security utility library built around native Web APIs. It combines a Zod-like validation API, basic sanitization helpers, hashing, and JSON Web Token signing/verification in one tree-shakable package.
+<img src="./docs/assets/preview.svg" alt="OmniGuard security toolkit preview">
 
-## Why It Exists
+OmniGuard is a compact security utility library built around native Web APIs. It combines a Zod-like validation surface, basic sanitization helpers, hashing, and JSON Web Token signing/verification in one tree-shakable package.
 
-Small apps and edge runtimes often need security basics without pulling several heavy dependencies:
+## Why This Exists
 
-- schema validation
+Small apps and edge runtimes often need security basics without pulling several dependencies:
+
+- validation schemas
 - HTML stripping and escaping
 - hashing through Web Crypto
 - JWT signing and verification
-- compatibility with browser-like and edge environments
+- browser/edge-friendly primitives
 
 OmniGuard puts those pieces behind one consistent API.
 
@@ -23,13 +25,7 @@ OmniGuard puts those pieces behind one consistent API.
 - Sanitization helpers such as `stripHtml` and `escape`
 - Web Crypto based hashing
 - JWT signing and verification
-- TypeScript-first build with tests
-
-## Install
-
-```bash
-npm install omniguard
-```
+- Vitest coverage for validation, sanitization, and crypto helpers
 
 ## Example
 
@@ -55,10 +51,6 @@ if (result.success) {
 }
 ```
 
-## Project Status
-
-This is an early security toolkit and portfolio project. It already has focused unit coverage for validation, sanitization, and crypto helpers. The next useful improvements are richer error formatting, more validators, and runtime compatibility examples.
-
 ## Development
 
 ```bash
@@ -67,10 +59,14 @@ npm test
 npm run build
 ```
 
+## Current Status
+
+This is an early security toolkit and portfolio project. The next useful improvements are richer error formatting, more validators, and runtime compatibility examples.
+
 ## Recent Hardening
 
 JWT verification now rejects expired tokens and tokens whose `nbf` claim is still in the future.
 
-## License
+## Author
 
-MIT
+Onur Acar - <https://github.com/onuracar-dev>
