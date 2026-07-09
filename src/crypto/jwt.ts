@@ -79,7 +79,13 @@ export async function verifyJWT(token: string, secret: string): Promise<Record<s
 
   const payloadJson = new TextDecoder().decode(payloadBytes as BufferSource);
   try {
-    return JSON.parse(payloadJson);
+    const payload = JSON.parse(payloadJson);
+    const now = Math.floor(Date.now() / 1000);
+
+    if (typeof payload.exp === 'number' && payload.exp <= now) return null;
+    if (typeof payload.nbf === 'number' && payload.nbf > now) return null;
+
+    return payload;
   } catch {
     return null;
   }

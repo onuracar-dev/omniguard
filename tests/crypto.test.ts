@@ -40,4 +40,15 @@ describe('Cryptography (Web Crypto API)', () => {
     const verifiedTampered = await verifyJWT(tamperedToken, secret);
     expect(verifiedTampered).toBeNull();
   });
+
+  it('should reject expired or not-yet-valid JWT claims', async () => {
+    const secret = 'super-secret-key-123!';
+    const now = Math.floor(Date.now() / 1000);
+
+    const expired = await signJWT({ userId: 1, exp: now - 10 }, secret);
+    const future = await signJWT({ userId: 1, nbf: now + 60 }, secret);
+
+    expect(await verifyJWT(expired, secret)).toBeNull();
+    expect(await verifyJWT(future, secret)).toBeNull();
+  });
 });
