@@ -2,6 +2,14 @@
 
 A universal, high-performance, and tree-shakable security and validation toolkit for JavaScript and TypeScript.
 
+## Project Snapshot
+
+OmniGuard is a zero-dependency TypeScript toolkit that combines schema validation, sanitization, hashing, and JWT helpers around native Web APIs. It is a strong systems-style portfolio project because it touches correctness, edge-runtime compatibility, security ergonomics, and testable APIs.
+
+- **Core idea:** replace several common validation/security dependencies with one small tree-shakable package.
+- **Recent hardening:** JWT verification now rejects expired tokens and tokens whose `nbf` claim is still in the future.
+- **Validation:** `npm test` and `npm run build`.
+
 [English](#english) | [Türkçe](#türkçe)
 
 ---
