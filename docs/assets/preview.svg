@@ -3,8 +3,9 @@
   <rect x="54" y="52" width="1092" height="526" rx="20" fill="#111827" stroke="#374151"/>
   <text x="86" y="116" fill="#F9FAFB" font-family="Segoe UI, Arial" font-size="42" font-weight="700">OmniGuard</text>
   <text x="86" y="154" fill="#9CA3AF" font-family="Segoe UI, Arial" font-size="20">Validation, sanitization, hashing, JWT helpers</text>
-  <rect x="86" y="226" width="1010" height="92" rx="16" fill="#064E3B"/>
-  <text x="122" y="283" fill="#D1FAE5" font-family="Consolas, monospace" font-size="24">v.object({ username: v.string().stripHtml().min(3), email: v.string().email() })</text>
+  <rect x="86" y="216" width="1010" height="118" rx="16" fill="#064E3B"/>
+  <text x="122" y="264" fill="#D1FAE5" font-family="Consolas, monospace" font-size="21">v.object({ username: v.string().stripHtml().min(3),</text>
+  <text x="122" y="300" fill="#D1FAE5" font-family="Consolas, monospace" font-size="21">           email: v.string().email() })</text>
   <g font-family="Segoe UI, Arial" font-size="18" font-weight="700">
     <rect x="110" y="386" width="180" height="76" rx="14" fill="#2563EB"/>
     <text x="157" y="432" fill="white">Validate</text>
