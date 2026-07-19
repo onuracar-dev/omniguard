@@ -30,7 +30,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean && node scripts/build-cloudflare-website.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "npm test && npm run build"
