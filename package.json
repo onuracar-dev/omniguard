@@ -51,7 +51,7 @@
     "type": "git",
     "url": "git+https://github.com/onuracar-dev/omniguard.git"
   },
-  "homepage": "https://omniguard.onuracar-work.workers.dev/",
+  "homepage": "https://omniguard.onuracar.dev/",
   "bugs": {
     "url": "https://github.com/onuracar-dev/omniguard/issues"
   },

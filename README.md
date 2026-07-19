@@ -2,7 +2,7 @@
 
 Zero-runtime-dependency validation, contextual HTML text escaping, hashing, and focused HS256 JWT helpers for TypeScript.
 
-[Live website](https://omniguard-lfqjdy.v2.appdeploy.ai/) · [GitHub repository](https://github.com/onuracar-dev/omniguard)
+[Live website](https://omniguard.onuracar.dev/) · [GitHub repository](https://github.com/onuracar-dev/omniguard)
 
 OmniGuard is intentionally small. It is useful when an application needs fluent runtime validation and a few Web Crypto-based primitives without adopting a full schema or identity platform.
 
