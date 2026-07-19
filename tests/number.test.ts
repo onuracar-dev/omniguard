@@ -8,9 +8,11 @@ describe('NumberValidator', () => {
     expect(v.number().parse(-10.5)).toBe(-10.5);
   });
 
-  it('should reject non-numbers and NaN', () => {
+  it('should reject non-numbers and non-finite values', () => {
     expect(() => v.number().parse('123')).toThrow('Expected number, received string');
-    expect(() => v.number().parse(NaN)).toThrow('Expected number, received number'); // Because of NaN check
+    expect(() => v.number().parse(NaN)).toThrow('Expected number, received number');
+    expect(() => v.number().parse(Infinity)).toThrow('Expected number, received number');
+    expect(() => v.number().parse(-Infinity)).toThrow('Expected number, received number');
   });
 
   it('should validate min', () => {
@@ -38,6 +40,13 @@ describe('NumberValidator', () => {
     expect(schema.parse(1)).toBe(1);
     expect(() => schema.parse(0)).toThrow('Number must be greater than 0');
     expect(() => schema.parse(-1)).toThrow('Number must be greater than 0');
+  });
+
+  it('should validate non-negative numbers', () => {
+    const schema = v.number().nonnegative();
+    expect(schema.parse(0)).toBe(0);
+    expect(schema.parse(1)).toBe(1);
+    expect(() => schema.parse(-1)).toThrow('Number must be greater than or equal to 0');
   });
 
   it('should handle optional and nullable', () => {

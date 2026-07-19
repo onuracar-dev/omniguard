@@ -3,7 +3,7 @@ import { Issue } from '../errors/ValidationError';
 
 export class NumberValidator extends BaseValidator<number> {
   protected _parse(val: unknown, ctx: ParseContext): { success: boolean; data?: number; issue?: Issue } {
-    if (typeof val !== 'number' || Number.isNaN(val)) {
+    if (typeof val !== 'number' || !Number.isFinite(val)) {
       return { success: false, issue: { code: 'invalid_type', message: 'Expected number, received ' + typeof val, path: ctx.path } };
     }
     return { success: true, data: val };
@@ -37,6 +37,14 @@ export class NumberValidator extends BaseValidator<number> {
     return this.addRule((val, ctx) => {
       if (val <= 0) {
         return { code: 'too_small', message: message || 'Number must be greater than 0', path: ctx.path };
+      }
+    });
+  }
+
+  public nonnegative(message?: string): this {
+    return this.addRule((val, ctx) => {
+      if (val < 0) {
+        return { code: 'too_small', message: message || 'Number must be greater than or equal to 0', path: ctx.path };
       }
     });
   }

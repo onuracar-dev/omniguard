@@ -1,0 +1,28 @@
+# Tests
+
+## Test 1 - Landing page and validation demo load [sanity]
+Viewport: desktop (1280x800)
+Description: Verifies the core product message and primary interactive demo are available.
+Steps:
+1. Navigate to the app
+2. Confirm "Small security primitives" and the "onur@example.com" input are visible
+3. Confirm the result shows "success"
+Expected: The page presents OmniGuard and the validation demo reports a successful result.
+
+## Test 2 - Invalid input exposes the validation guardrail
+Viewport: desktop (1280x800)
+Description: Verifies malformed input is rejected in the browser playground.
+Steps:
+1. Navigate to the app
+2. Replace the email field value with "not-an-email"
+3. Observe the playground result
+Expected: The visible result changes to "invalid_string" and "Invalid email".
+
+## Test 3 - Mobile navigation remains usable
+Viewport: mobile (375x667)
+Description: Verifies collapsed navigation opens and reaches a content section.
+Steps:
+1. Navigate to the app
+2. Tap the button labeled "Open navigation"
+3. Tap "Security"
+Expected: The navigation closes and the security contract section is visible.

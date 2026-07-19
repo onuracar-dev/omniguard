@@ -1,14 +1,39 @@
 {
   "name": "omniguard",
-  "version": "0.1.0",
-  "description": "Zero-dependency validation, sanitization, hashing, and JWT helpers for TypeScript.",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "version": "0.2.0",
+  "description": "Zero-dependency validation, HTML text escaping, hashing, and focused HS256 JWT helpers for TypeScript.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "SECURITY.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm test && npm run build"
   },
   "keywords": [
     "validation",
@@ -22,9 +47,25 @@
   ],
   "author": "Onur Acar",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onuracar-dev/omniguard.git"
+  },
+  "homepage": "https://omniguard-lfqjdy.v2.appdeploy.ai/",
+  "bugs": {
+    "url": "https://github.com/onuracar-dev/omniguard/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "provenance": true
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
+  },
   "devDependencies": {
-    "tsup": "^8.0.0",
-    "typescript": "^5.4.0",
-    "vitest": "^1.4.0"
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }

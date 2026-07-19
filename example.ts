@@ -1,4 +1,4 @@
-import { v } from './src/index';
+import { signJWT, v, verifyJWT } from './src/index';
 
 console.log('--- OmniGuard Example ---');
 
@@ -20,3 +20,17 @@ if (!safeResult.success) {
 } else {
   console.log('Success:', safeResult.data);
 }
+
+console.log('\n--- Focused HS256 JWT ---');
+const jwtSecret = 'replace-with-a-random-secret-of-at-least-32-bytes';
+const token = await signJWT(
+  { role: 'reader' },
+  jwtSecret,
+  { audience: 'example', expiresInSeconds: 300, issuer: 'omniguard-example', subject: 'user-1' },
+);
+const claims = await verifyJWT(token, jwtSecret, {
+  audience: 'example',
+  issuer: 'omniguard-example',
+  requireExpiration: true,
+});
+console.log('Verified claims:', claims);

@@ -42,6 +42,21 @@ describe('StringValidator', () => {
     expect(() => schema.parse('invalid-email')).toThrow('Invalid email');
   });
 
+  it('should validate HTTP(S) URLs', () => {
+    const schema = v.string().url();
+    expect(schema.parse('https://example.com/path')).toBe('https://example.com/path');
+    expect(() => schema.parse('javascript:alert(1)')).toThrow('Invalid HTTP(S) URL');
+    expect(() => schema.parse('/relative')).toThrow('Invalid HTTP(S) URL');
+  });
+
+  it('should trim before validation and support reusable regular expressions', () => {
+    expect(v.string().trim().min(3).parse('  abc  ')).toBe('abc');
+    const schema = v.string().regex(/^a+$/g);
+    expect(schema.parse('aaa')).toBe('aaa');
+    expect(schema.parse('aaa')).toBe('aaa');
+    expect(() => schema.parse('bbb')).toThrow('required pattern');
+  });
+
   it('should chain multiple rules', () => {
     const schema = v.string().min(10).email();
     expect(schema.parse('hello@test.com')).toBe('hello@test.com');

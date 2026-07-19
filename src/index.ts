@@ -6,6 +6,8 @@ export { object, ObjectValidator } from './types/object';
 export { array, ArrayValidator } from './types/array';
 export { hash } from './crypto/hash';
 export { signJWT, verifyJWT } from './crypto/jwt';
+export type { JwtAudience, JwtPayload, JwtSignOptions, JwtVerifyOptions } from './crypto/jwt';
+export { escapeHtml, escapeHtmlText, stripHtml, stripHtmlTags } from './security/sanitization';
 
 import { string } from './types/string';
 import { number } from './types/number';

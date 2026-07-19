@@ -1,6 +1,6 @@
 import { BaseValidator, ParseContext } from '../core/BaseValidator';
 import { Issue } from '../errors/ValidationError';
-import { escapeHtml, stripHtml } from '../security/sanitization';
+import { escapeHtmlText, stripHtmlTags } from '../security/sanitization';
 
 export class StringValidator extends BaseValidator<string> {
   protected _parse(val: unknown, ctx: ParseContext): { success: boolean; data?: string; issue?: Issue } {
@@ -35,13 +35,42 @@ export class StringValidator extends BaseValidator<string> {
     });
   }
 
-  // Sanitization methods
-  public escape(): this {
-    return this.addTransform((val) => escapeHtml(val));
+  public url(message?: string): this {
+    return this.addRule((val, ctx) => {
+      try {
+        const parsed = new URL(val);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error();
+      } catch {
+        return { code: 'invalid_string', message: message || 'Invalid HTTP(S) URL', path: ctx.path };
+      }
+    });
   }
 
+  public regex(pattern: RegExp, message?: string): this {
+    return this.addRule((val, ctx) => {
+      pattern.lastIndex = 0;
+      if (!pattern.test(val)) {
+        return { code: 'invalid_string', message: message || 'String does not match the required pattern', path: ctx.path };
+      }
+    });
+  }
+
+  public trim(): this {
+    return this.addTransform((val) => val.trim());
+  }
+
+  // Sanitization methods
+  public escape(): this {
+    return this.addTransform((val) => escapeHtmlText(val));
+  }
+
+  /** @deprecated This extracts plain text; it is not an XSS sanitizer. */
   public stripHtml(): this {
-    return this.addTransform((val) => stripHtml(val));
+    return this.stripHtmlTags();
+  }
+
+  public stripHtmlTags(): this {
+    return this.addTransform((val) => stripHtmlTags(val));
   }
 }
 

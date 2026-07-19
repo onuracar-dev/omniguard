@@ -3,6 +3,8 @@ import { hash } from '../src/crypto/hash';
 import { signJWT, verifyJWT } from '../src/crypto/jwt';
 
 describe('Cryptography (Web Crypto API)', () => {
+  const secret = 'super-secret-key-with-at-least-32-bytes';
+
   it('should hash strings using SHA-256', async () => {
     const hashed = await hash('hello world');
     // SHA-256 for 'hello world'
@@ -10,7 +12,6 @@ describe('Cryptography (Web Crypto API)', () => {
   });
 
   it('should sign and verify JWTs', async () => {
-    const secret = 'super-secret-key-123!';
     const payload = { userId: 1, role: 'admin' };
     
     const token = await signJWT(payload, secret);
@@ -24,8 +25,7 @@ describe('Cryptography (Web Crypto API)', () => {
   });
 
   it('should return null for invalid JWT verification', async () => {
-    const secret = 'super-secret-key-123!';
-    const wrongSecret = 'wrong-key';
+    const wrongSecret = 'different-secret-key-with-at-least-32-bytes';
     const payload = { userId: 1 };
     
     const token = await signJWT(payload, secret);
@@ -42,7 +42,6 @@ describe('Cryptography (Web Crypto API)', () => {
   });
 
   it('should reject expired or not-yet-valid JWT claims', async () => {
-    const secret = 'super-secret-key-123!';
     const now = Math.floor(Date.now() / 1000);
 
     const expired = await signJWT({ userId: 1, exp: now - 10 }, secret);
