@@ -1,6 +1,9 @@
 {
   "name": "omniguard",
   "compatibility_date": "2026-07-19",
+  "routes": [
+    { "pattern": "omniguard.onuracar.dev", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist"
   }
