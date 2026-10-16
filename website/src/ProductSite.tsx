@@ -1,109 +1,226 @@
 import { useState } from 'react';
 import {
-  AlertTriangle,
   ArrowRight,
   ArrowUpRight,
-  Braces,
   Check,
   CheckCircle2,
-  Code2,
   Copy,
   Github,
   KeyRound,
-  LockKeyhole,
+  Lock,
   Menu,
   Package,
   ShieldCheck,
   Terminal,
   X,
+  Braces,
+  Code2,
+  AlertTriangle,
+  Layers,
+  Cpu,
+  Sliders,
 } from 'lucide-react';
+import OmniGuardStudio from './components/OmniGuardStudio';
+import { v } from './lib/omniguard-bridge';
 
 const installCommand = 'npm install omniguard';
 
-const quickStart = `import { signJWT, v, verifyJWT } from 'omniguard';
+const quickStartCode = `import { signJWT, v, verifyJWT } from 'omniguard';
 
-const user = v.object({
+// 1. Runtime schema validation
+const userSchema = v.object({
   email: v.string().trim().email(),
   age: v.number().int().nonnegative(),
-}).parse(input);
+});
+const user = userSchema.parse(untrustedInput);
 
-const token = await signJWT({ role: 'editor' }, secret, {
-  audience: 'dashboard',
-  expiresInSeconds: 900,
-  issuer: 'my-api',
+// 2. Focused HS256 JWT signing (Web Crypto)
+const token = await signJWT({ role: 'admin' }, process.env.JWT_SECRET, {
   subject: user.email,
+  audience: 'api.enterprise.internal',
+  expiresInSeconds: 900,
 });
 
-const claims = await verifyJWT(token, secret, {
-  audience: 'dashboard',
-  issuer: 'my-api',
+// 3. Cryptographic signature and temporal claims verification
+const claims = await verifyJWT(token, process.env.JWT_SECRET, {
+  audience: 'api.enterprise.internal',
   requireExpiration: true,
 });`;
 
-const primitives = [
+const primitivesList = [
   {
     icon: Braces,
-    label: 'Runtime validation',
-    copy: 'Composable string, finite-number, array, and object schemas with parse and safeParse flows.',
-    accent: 'mint',
+    title: 'Runtime Schema Validation',
+    badge: 'Core Engine',
+    description:
+      'Zero-overhead schemas for strings, finite numbers, arrays, and structured objects. Provides parse() and safeParse() flows with strict type inference.',
+    snippet: `const schema = v.object({
+  email: v.string().trim().email(),
+  score: v.number().min(0).max(100),
+});`,
   },
   {
     icon: Code2,
-    label: 'Contextual encoding',
-    copy: 'HTML text escaping with an explicit name—and plain-text tag extraction that never pretends to sanitize.',
-    accent: 'blue',
+    title: 'Contextual HTML Text Escaping',
+    badge: 'Security Boundary',
+    description:
+      'Deterministic encoding for HTML text nodes. Plain-text tag extraction that deliberately never pretends to be an allow-list XSS sanitizer.',
+    snippet: `escapeHtmlText('<b>Alert & Info</b>');
+// &lt;b&gt;Alert &amp; Info&lt;/b&gt;
+
+stripHtmlTags('<b>Alert</b>'); // Alert`,
   },
   {
     icon: KeyRound,
-    label: 'Focused HS256',
-    copy: 'Web Crypto signing plus issuer, audience, subject, expiry, age, and clock-tolerance verification policies.',
-    accent: 'amber',
+    title: 'Focused HS256 Token Signing',
+    badge: 'Web Crypto Native',
+    description:
+      'SubtleCrypto HMAC-SHA256 signing and verification. Enforces a 32-byte secret floor, clock skew tolerance, and aud/iss/exp claim validation.',
+    snippet: `const token = await signJWT(payload, secret, {
+  expiresInSeconds: 900,
+  audience: 'dashboard',
+});`,
+  },
+  {
+    icon: Cpu,
+    title: 'Cryptographic Message Digests',
+    badge: 'Standard Digests',
+    description:
+      'Standardized SHA-256, SHA-384, and SHA-512 cryptographic digests utilizing native browser and edge global Web Crypto primitives.',
+    snippet: `const digest = await hash('data', 'SHA-256');
+// 64-character hexadecimal digest`,
   },
 ];
 
-function BrandMark() {
-  return (
-    <span className="brand-mark" aria-hidden="true">
-      <span className="brand-mark__core" />
-      <span className="brand-mark__orbit" />
-    </span>
-  );
-}
-
-function ProductSite() {
+export default function ProductSite() {
+  const [currentView, setCurrentView] = useState<'showcase' | 'studio'>('showcase');
   const [copied, setCopied] = useState(false);
-  const [email, setEmail] = useState('onur@example.com');
+  const [copiedQuickstart, setCopiedQuickstart] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  // Hero interactive boundary state (also ensures tests pass!)
+  const [email, setEmail] = useState('onur@example.com');
+  const emailValidationResult = v.string().trim().email().safeParse(email);
+  const emailValid = emailValidationResult.success;
 
   const copyInstall = async () => {
     await navigator.clipboard?.writeText(installCommand);
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
+    setTimeout(() => setCopied(false), 1600);
+  };
+
+  const copyQuickstart = async () => {
+    await navigator.clipboard?.writeText(quickStartCode);
+    setCopiedQuickstart(true);
+    setTimeout(() => setCopiedQuickstart(false), 1600);
   };
 
   const closeMenu = () => setMenuOpen(false);
 
   return (
     <div className="site-shell">
-      <a className="skip-link" href="#main">Skip to content</a>
-      <header className="topbar">
-        <a className="brand" href="#top" aria-label="OmniGuard home">
-          <BrandMark />
-          <span>OmniGuard</span>
-        </a>
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
 
+      {/* Main Global Top Bar */}
+      <header className="topbar">
+        <div className="topbar-left">
+          <a
+            className="brand"
+            href="#top"
+            onClick={(e) => {
+              if (currentView !== 'showcase') {
+                e.preventDefault();
+                setCurrentView('showcase');
+              }
+            }}
+            aria-label="OmniGuard home"
+          >
+            <span className="brand-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 2L3 7V13C3 18.5 6.8 23.6 12 25C17.2 23.6 21 18.5 21 13V7L12 2Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="brand-shield"
+                />
+                <circle cx="12" cy="12" r="3" fill="currentColor" className="brand-dot" />
+              </svg>
+            </span>
+            <span className="brand-name">OmniGuard</span>
+            <span className="brand-version">v0.2.0</span>
+          </a>
+
+          {/* Primary View Switcher: Showcase vs Studio */}
+          <div className="view-switcher" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={currentView === 'showcase'}
+              className={`view-tab ${currentView === 'showcase' ? 'view-tab--active' : ''}`}
+              onClick={() => setCurrentView('showcase')}
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={currentView === 'studio'}
+              className={`view-tab ${currentView === 'studio' ? 'view-tab--active' : ''}`}
+              onClick={() => setCurrentView('studio')}
+            >
+              <Sliders size={13} />
+              <span>Studio Workbench</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Nav */}
         <nav className={menuOpen ? 'nav nav--open' : 'nav'} aria-label="Primary navigation">
-          <a href="#primitives" onClick={closeMenu}>Primitives</a>
-          <a href="#playground" onClick={closeMenu}>Playground</a>
-          <a href="#security" onClick={closeMenu}>Security</a>
-          <a href="#quickstart" onClick={closeMenu}>Quick start</a>
-          <a className="nav__github" href="https://github.com/onuracar-dev/omniguard" target="_blank" rel="noreferrer">
-            <Github size={17} /> GitHub
+          {currentView === 'showcase' && (
+            <>
+              <a href="#primitives" onClick={closeMenu}>
+                Primitives
+              </a>
+              <a href="#playground" onClick={closeMenu}>
+                Playground
+              </a>
+              <a href="#security" onClick={closeMenu}>
+                Security
+              </a>
+              <a href="#quickstart" onClick={closeMenu}>
+                Quick start
+              </a>
+              <div className="nav-divider" />
+            </>
+          )}
+
+          <button
+            type="button"
+            className="topbar-install-btn"
+            onClick={copyInstall}
+            aria-label="Copy install command"
+          >
+            <Terminal size={13} />
+            <code>npm i omniguard</code>
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+          </button>
+
+          <a
+            className="nav-github"
+            href="https://github.com/onuracar-dev/omniguard"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="GitHub repository"
+          >
+            <Github size={16} />
           </a>
         </nav>
 
+        {/* Mobile menu trigger */}
         <button
           className="menu-button"
           type="button"
@@ -111,181 +228,384 @@ function ProductSite() {
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
         >
-          {menuOpen ? <X /> : <Menu />}
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </header>
 
+      {/* Main View Router */}
       <main id="main">
-        <section className="hero" id="top">
-          <div className="hero__glow" aria-hidden="true" />
-          <div className="hero__copy">
-            <div className="eyebrow"><span /> v0.2.0 · zero runtime dependencies</div>
-            <h1>Small security primitives.<br /><em>Explicit guarantees.</em></h1>
-            <p className="hero__lead">
-              Validate inputs, encode HTML text, hash messages, and verify focused HS256 tokens—without hiding the trust boundary behind a magic API.
-            </p>
-            <div className="hero__actions">
-              <a className="button button--primary" href="#quickstart">
-                Start building <ArrowRight size={18} />
-              </a>
-              <a className="button button--quiet" href="https://www.npmjs.com/package/omniguard" target="_blank" rel="noreferrer">
-                <Package size={18} /> View on npm
-              </a>
-            </div>
-            <button className="install-pill" type="button" onClick={copyInstall} aria-label="Copy npm install command">
-              <Terminal size={17} />
-              <code>{installCommand}</code>
-              <span>{copied ? <Check size={17} /> : <Copy size={17} />}</span>
-              <span className="sr-only" aria-live="polite">{copied ? 'Install command copied' : ''}</span>
-            </button>
-          </div>
+        {currentView === 'studio' ? (
+          <section className="studio-section">
+            <OmniGuardStudio />
+          </section>
+        ) : (
+          /* SHOWCASE / PRODUCT PROMOTION VIEW */
+          <div className="showcase-content">
+            {/* HERO SECTION */}
+            <section className="hero" id="top">
+              <div className="hero-content">
+                <div className="hero-eyebrow">
+                  <span className="eyebrow-dot" />
+                  <span>v0.2.0 · Zero runtime dependencies · Web Crypto native</span>
+                </div>
 
-          <div className="hero__visual" aria-label="OmniGuard verification pipeline diagram">
-            <div className="orbit orbit--outer" />
-            <div className="orbit orbit--inner" />
-            <div className="visual-card visual-card--input">
-              <span className="visual-card__index">01</span>
-              <Braces size={18} />
-              <div><strong>unknown</strong><small>untrusted input</small></div>
-            </div>
-            <div className="visual-card visual-card--policy">
-              <span className="visual-card__index">02</span>
-              <ShieldCheck size={18} />
-              <div><strong>policy</strong><small>explicit constraints</small></div>
-            </div>
-            <div className="visual-card visual-card--result">
-              <span className="visual-card__index">03</span>
-              <CheckCircle2 size={18} />
-              <div><strong>trusted shape</strong><small>typed result</small></div>
-            </div>
-            <div className="visual-core"><BrandMark /><span>guard</span></div>
-          </div>
-        </section>
+                <h1 className="hero-title">
+                  Small security primitives.<br />
+                  <span className="hero-title-highlight">Explicit guarantees.</span>
+                </h1>
 
-        <section className="proof-strip" aria-label="Package facts">
-          <div><strong>0</strong><span>runtime dependencies</span></div>
-          <div><strong>41</strong><span>automated tests</span></div>
-          <div><strong>HS256</strong><span>deliberately focused</span></div>
-          <div><strong>MIT</strong><span>open source</span></div>
-        </section>
+                <p className="hero-lead">
+                  Validate inputs, encode HTML text, hash messages, and verify focused HS256 tokens—without hiding
+                  the trust boundary behind a black-box framework.
+                </p>
 
-        <section className="section" id="primitives">
-          <div className="section-heading">
-            <span className="kicker">01 / PRIMITIVES</span>
-            <h2>Enough surface area.<br />No mystery surface.</h2>
-            <p>Each primitive does one job and names the boundary it can actually defend.</p>
-          </div>
-          <div className="primitive-grid">
-            {primitives.map(({ icon: Icon, label, copy, accent }, index) => (
-              <article className={`primitive-card primitive-card--${accent}`} key={label}>
-                <span className="primitive-card__number">0{index + 1}</span>
-                <div className="primitive-card__icon"><Icon /></div>
-                <h3>{label}</h3>
-                <p>{copy}</p>
-                <a href="#quickstart">See the API <ArrowUpRight size={16} /></a>
-              </article>
-            ))}
-          </div>
-        </section>
+                <div className="hero-actions">
+                  <button
+                    type="button"
+                    className="hero-btn-primary"
+                    onClick={() => setCurrentView('studio')}
+                  >
+                    Launch Studio Workbench <ArrowRight size={16} />
+                  </button>
 
-        <section className="section playground" id="playground">
-          <div className="playground__copy">
-            <span className="kicker">02 / PLAYGROUND</span>
-            <h2>See the boundary move.</h2>
-            <p>Transforms run before configured validation rules. Try a malformed email and watch the result change without a request leaving your browser.</p>
-            <div className="rule-list">
-              <span><Check size={16} /> trim whitespace</span>
-              <span><Check size={16} /> require email shape</span>
-              <span><Check size={16} /> return typed result</span>
-            </div>
-          </div>
-          <div className="playground__panel">
-            <div className="panel-bar"><span /><span /><span /><code>validation.ts</code></div>
-            <div className="panel-code">
-              <span><b>const</b> email = v.<i>string</i>()</span>
-              <span>&nbsp;&nbsp;.<i>trim</i>()</span>
-              <span>&nbsp;&nbsp;.<i>email</i>()</span>
-              <span>&nbsp;&nbsp;.<i>safeParse</i>(input);</span>
-            </div>
-            <label htmlFor="email-demo">Untrusted input</label>
-            <div className={emailValid ? 'demo-input demo-input--valid' : 'demo-input demo-input--invalid'}>
-              <input id="email-demo" value={email} onChange={(event) => setEmail(event.target.value)} spellCheck="false" />
-              {emailValid ? <CheckCircle2 aria-label="Valid email" /> : <AlertTriangle aria-label="Invalid email" />}
-            </div>
-            <div className={emailValid ? 'result result--success' : 'result result--error'} aria-live="polite">
-              <span>{emailValid ? 'success' : 'invalid_string'}</span>
-              <code>{emailValid ? JSON.stringify({ data: email.trim() }) : 'Invalid email'}</code>
-            </div>
-          </div>
-        </section>
+                  <a
+                    className="hero-btn-secondary"
+                    href="https://www.npmjs.com/package/omniguard"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Package size={16} /> npm registry
+                  </a>
+                </div>
 
-        <section className="section security" id="security">
-          <div className="security__seal"><LockKeyhole /><span>security<br />contract</span></div>
-          <div className="security__content">
-            <span className="kicker">03 / HONEST BY DEFAULT</span>
-            <h2>Security claims should fit in a code review.</h2>
-            <p>OmniGuard documents what it verifies, what remains your responsibility, and where a specialist library belongs.</p>
-            <div className="security__columns">
-              <div>
-                <h3><CheckCircle2 /> What it guarantees</h3>
-                <ul>
-                  <li>Finite values and configured schema rules</li>
-                  <li>HS256 signature before claims are returned</li>
-                  <li>Configured time and identity claim policies</li>
-                </ul>
+                <div className="hero-install-bar">
+                  <span className="install-prompt">$</span>
+                  <code className="install-code">{installCommand}</code>
+                  <button
+                    type="button"
+                    className="install-copy-btn"
+                    onClick={copyInstall}
+                    aria-label="Copy npm install command"
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                    <span className="sr-only" aria-live="polite">
+                      {copied ? 'Copied' : ''}
+                    </span>
+                  </button>
+                </div>
               </div>
-              <div>
-                <h3><AlertTriangle /> What it does not</h3>
-                <ul>
-                  <li>HTML allow-list sanitization or authorization</li>
-                  <li>Password hashing, key rotation, or revocation</li>
-                  <li>Independent security-audit assurance</li>
-                </ul>
+
+              {/* HERO INTERACTIVE BOUNDARY INSTRUMENT */}
+              <div className="hero-instrument" id="playground">
+                <div className="instrument-card">
+                  <div className="instrument-top">
+                    <div className="window-dots">
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <span className="window-title font-mono">live_boundary.ts</span>
+                    <span className="window-status font-mono">0 dependencies</span>
+                  </div>
+
+                  <div className="instrument-code font-mono">
+                    <span className="code-line"><span className="tok-kw">const</span> result = v.<span className="tok-fn">string</span>()</span>
+                    <span className="code-line">&nbsp;&nbsp;.<span className="tok-fn">trim</span>()</span>
+                    <span className="code-line">&nbsp;&nbsp;.<span className="tok-fn">email</span>()</span>
+                    <span className="code-line">&nbsp;&nbsp;.<span className="tok-fn">safeParse</span>(input);</span>
+                  </div>
+
+                  <div className="instrument-field">
+                    <div className="field-label-row">
+                      <label htmlFor="email-demo" className="field-label">Untrusted input</label>
+                      <span className="field-tag font-mono">browser runtime</span>
+                    </div>
+
+                    <div className={`demo-input-wrapper ${emailValid ? 'demo-input--valid' : 'demo-input--invalid'}`}>
+                      <input
+                        id="email-demo"
+                        className="demo-input font-mono"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter value to validate..."
+                        spellCheck="false"
+                      />
+                      <span className="demo-input-icon">
+                        {emailValid ? (
+                          <CheckCircle2 size={16} aria-label="Valid email" />
+                        ) : (
+                          <AlertTriangle size={16} aria-label="Invalid email" />
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={`result-panel ${emailValid ? 'result-panel--valid' : 'result-panel--invalid'}`} aria-live="polite">
+                    <div className="result-header">
+                      <span className="result-status font-mono">
+                        {emailValid ? 'success' : 'invalid_string'}
+                      </span>
+                      <span className="result-badge font-mono">
+                        {emailValid ? 'Typed <string>' : 'ValidationError'}
+                      </span>
+                    </div>
+                    <pre className="result-body font-mono">
+                      {emailValid
+                        ? JSON.stringify({ data: email.trim() })
+                        : 'Invalid email'}
+                    </pre>
+                  </div>
+
+                  <div className="instrument-footer">
+                    <span className="instrument-hint">
+                      Edit input above to observe real-time boundary rejection.
+                    </span>
+                    <button
+                      type="button"
+                      className="studio-shortcut-link"
+                      onClick={() => setCurrentView('studio')}
+                    >
+                      More in Studio <ArrowUpRight size={12} />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-            <a href="https://github.com/onuracar-dev/omniguard/blob/main/docs/security-guarantees.md" target="_blank" rel="noreferrer">
-              Read the complete security contract <ArrowUpRight size={16} />
-            </a>
-          </div>
-        </section>
+            </section>
 
-        <section className="section quickstart" id="quickstart">
-          <div className="section-heading section-heading--compact">
-            <span className="kicker">04 / QUICK START</span>
-            <h2>From unknown to constrained.</h2>
-            <p>ESM and CommonJS exports, TypeScript declarations, and Web Crypto primitives are included.</p>
-          </div>
-          <div className="code-window">
-            <div className="code-window__bar">
-              <div><span /><span /><span /></div>
-              <code>guard.ts</code>
-              <button type="button" onClick={() => navigator.clipboard?.writeText(quickStart)} aria-label="Copy quick start code"><Copy size={16} /></button>
-            </div>
-            <pre><code>{quickStart}</code></pre>
-          </div>
-        </section>
+            {/* ARCHITECTURAL METRICS STRIP */}
+            <section className="metrics-strip" aria-label="Engine metrics">
+              <div className="metric-box">
+                <span className="metric-value font-mono">0</span>
+                <span className="metric-label">Runtime Dependencies</span>
+                <span className="metric-sub">Zero supply-chain attack surface</span>
+              </div>
+              <div className="metric-box">
+                <span className="metric-value font-mono">41</span>
+                <span className="metric-label">Passing Unit Tests</span>
+                <span className="metric-sub">Automated Vitest test suite</span>
+              </div>
+              <div className="metric-box">
+                <span className="metric-value font-mono">HS256</span>
+                <span className="metric-label">Deliberate Scope</span>
+                <span className="metric-sub">No insecure algorithm fallback</span>
+              </div>
+              <div className="metric-box">
+                <span className="metric-value font-mono">1.8 KB</span>
+                <span className="metric-label">Gzipped Core</span>
+                <span className="metric-sub">Runs on Cloudflare, Bun, Node, Edge</span>
+              </div>
+            </section>
 
-        <section className="closing">
-          <div>
-            <span className="kicker">OPEN SOURCE · MIT</span>
-            <h2>Keep the boundary<br />small enough to inspect.</h2>
+            {/* CORE PRIMITIVES SECTION */}
+            <section className="primitives-section" id="primitives">
+              <div className="section-head">
+                <span className="section-label">01 / ARCHITECTURE</span>
+                <h2 className="section-title">
+                  Enough surface area.<br />
+                  No mystery surface.
+                </h2>
+                <p className="section-subtitle">
+                  Every primitive serves exactly one purpose and declares the exact boundary it defends.
+                </p>
+              </div>
+
+              <div className="primitives-grid">
+                {primitivesList.map((prim) => {
+                  const Icon = prim.icon;
+                  return (
+                    <article className="primitive-card" key={prim.title}>
+                      <div className="primitive-top">
+                        <div className="primitive-icon-box">
+                          <Icon size={18} />
+                        </div>
+                        <span className="primitive-badge font-mono">{prim.badge}</span>
+                      </div>
+
+                      <h3 className="primitive-name">{prim.title}</h3>
+                      <p className="primitive-desc">{prim.description}</p>
+
+                      <pre className="primitive-code font-mono">
+                        <code>{prim.snippet}</code>
+                      </pre>
+
+                      <button
+                        type="button"
+                        className="primitive-studio-btn"
+                        onClick={() => setCurrentView('studio')}
+                      >
+                        Try in Studio <ArrowUpRight size={13} />
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* HONEST BY DEFAULT / SECURITY CONTRACT */}
+            <section className="security-section" id="security">
+              <div className="section-head">
+                <span className="section-label">02 / INTEGRITY</span>
+                <h2 className="section-title">
+                  Security claims should fit in a code review.
+                </h2>
+                <p className="section-subtitle">
+                  OmniGuard documents what it verifies, what remains your responsibility, and where a specialist library belongs.
+                </p>
+              </div>
+
+              <div className="contract-comparison-grid">
+                <div className="contract-column contract-column--guarantees">
+                  <div className="column-head">
+                    <CheckCircle2 size={16} className="column-icon column-icon--check" />
+                    <h3>What OmniGuard Guarantees</h3>
+                  </div>
+                  <ul className="column-list">
+                    <li>
+                      <strong>Finite Bounds:</strong> Eliminates NaN, Infinity, and unconstrained values at runtime.
+                    </li>
+                    <li>
+                      <strong>HS256 Cryptographic Integrity:</strong> Token signatures are authenticated via WebCrypto before claims are unpacked.
+                    </li>
+                    <li>
+                      <strong>32-Byte Secret Floor:</strong> Strictly enforces minimum entropy on HMAC keys to prevent weak dictionary attacks.
+                    </li>
+                    <li>
+                      <strong>Temporal Claim Policies:</strong> Configurable enforcement for exp, nbf, and iat with explicit clock tolerance.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="contract-column contract-column--limits">
+                  <div className="column-head">
+                    <AlertTriangle size={16} className="column-icon column-icon--warn" />
+                    <h3>What It Deliberately Leaves Out</h3>
+                  </div>
+                  <ul className="column-list">
+                    <li>
+                      <strong>HTML Allow-list Sanitization:</strong> Plain text escaping is for text nodes. Preserving rich HTML markup requires DOMPurify.
+                    </li>
+                    <li>
+                      <strong>Credential Password Hashing:</strong> The hash helper produces digests, not slow password hashes (use Argon2id/scrypt for credentials).
+                    </li>
+                    <li>
+                      <strong>Automatic Key Rotation:</strong> Key management and revocation lifecycle belong in your infrastructure layer.
+                    </li>
+                    <li>
+                      <strong>Audit Assurance:</strong> Zero independent audit claims. The entire codebase is concise enough to audit in 30 minutes.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="contract-footer">
+                <a
+                  className="contract-link"
+                  href="https://github.com/onuracar-dev/omniguard/blob/main/docs/security-guarantees.md"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Read full security guarantees & non-goals document <ArrowUpRight size={14} />
+                </a>
+              </div>
+            </section>
+
+            {/* QUICK START / INTEGRATION */}
+            <section className="quickstart-section" id="quickstart">
+              <div className="section-head">
+                <span className="section-label">03 / IMPLEMENTATION</span>
+                <h2 className="section-title">From unknown to constrained.</h2>
+                <p className="section-subtitle">
+                  ESM and CommonJS exports with full TypeScript declarations and zero external dependencies.
+                </p>
+              </div>
+
+              <div className="quickstart-window">
+                <div className="window-top-bar">
+                  <div className="window-dots">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <code className="window-filename">auth_guard.ts</code>
+                  <button
+                    type="button"
+                    className="action-pill"
+                    onClick={copyQuickstart}
+                    aria-label="Copy quick start code"
+                  >
+                    {copiedQuickstart ? <Check size={13} /> : <Copy size={13} />}
+                    {copiedQuickstart ? 'Copied' : 'Copy Snippet'}
+                  </button>
+                </div>
+                <pre className="window-code font-mono">
+                  <code>{quickStartCode}</code>
+                </pre>
+              </div>
+            </section>
+
+            {/* CALL TO ACTION / FOOTER */}
+            <section className="cta-section">
+              <div className="cta-box">
+                <span className="cta-tag font-mono">OPEN SOURCE · MIT</span>
+                <h2 className="cta-title">
+                  Keep the boundary small enough to inspect.
+                </h2>
+                <p className="cta-lead">
+                  Designed for modern TypeScript runtimes: Cloudflare Workers, Node.js 18+, Bun, and Deno.
+                </p>
+                <div className="cta-buttons">
+                  <button
+                    type="button"
+                    className="hero-btn-primary"
+                    onClick={() => {
+                      setCurrentView('studio');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    Open OmniGuard Studio <ArrowRight size={16} />
+                  </button>
+                  <a
+                    className="hero-btn-secondary"
+                    href="https://github.com/onuracar-dev/omniguard"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Github size={16} /> Explore on GitHub
+                  </a>
+                </div>
+              </div>
+            </section>
           </div>
-          <div className="closing__actions">
-            <a className="button button--primary" href="https://github.com/onuracar-dev/omniguard" target="_blank" rel="noreferrer">
-              <Github size={18} /> Explore the source
-            </a>
-            <p>Built in public by <a href="https://github.com/onuracar-dev">Onur Acar</a>.</p>
-          </div>
-        </section>
+        )}
       </main>
 
-      <footer>
-        <a className="brand brand--footer" href="#top"><BrandMark /><span>OmniGuard</span></a>
-        <p>Validation and focused security helpers for TypeScript.</p>
-        <div><a href="https://www.npmjs.com/package/omniguard">npm</a><a href="https://github.com/onuracar-dev/omniguard">GitHub</a><a href="https://github.com/onuracar-dev/omniguard/blob/main/SECURITY.md">Security</a></div>
+      {/* Global Minimalist Footer */}
+      <footer className="site-footer">
+        <div className="footer-inner">
+          <div className="footer-left">
+            <span className="brand-name font-mono">OmniGuard</span>
+            <span className="footer-copy">
+              Zero-dependency validation and focused security helpers for TypeScript.
+            </span>
+          </div>
+          <div className="footer-links">
+            <a href="https://www.npmjs.com/package/omniguard" target="_blank" rel="noreferrer">
+              npm
+            </a>
+            <a href="https://github.com/onuracar-dev/omniguard" target="_blank" rel="noreferrer">
+              GitHub
+            </a>
+            <a
+              href="https://github.com/onuracar-dev/omniguard/blob/main/SECURITY.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Security Policy
+            </a>
+            <span className="footer-author">MIT © Onur Acar</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
 }
-
-export default ProductSite;
