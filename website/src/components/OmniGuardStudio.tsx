@@ -1,4 +1,4 @@
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import {
   Braces,
   KeyRound,
@@ -10,12 +10,9 @@ import {
   CheckCircle2,
   Play,
   RotateCcw,
-  Sparkles,
   Lock,
-  FileCode2,
 } from 'lucide-react';
 import {
-  v,
   hash,
   signJWT,
   verifyJWT,
@@ -24,6 +21,21 @@ import {
   SCHEMA_PRESETS,
   type SchemaPreset,
 } from '../lib/omniguard-bridge';
+import ErrorBoundary from './ErrorBoundary';
+
+function decodeBase64UrlJson(segment: string): Record<string, unknown> | null {
+  if (!segment) return null;
+  try {
+    const padding = '='.repeat((4 - (segment.length % 4)) % 4);
+    const base64 = (segment + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    const decoded = new TextDecoder().decode(bytes);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
 
 type StudioTab = 'schema' | 'jwt' | 'sanitize' | 'hash';
 
@@ -85,10 +97,12 @@ export default function OmniGuardStudio() {
 
       {/* Studio Instrument Workspace */}
       <div className="studio-viewport">
-        {activeTab === 'schema' && <SchemaWorkbench />}
-        {activeTab === 'jwt' && <JwtStudio />}
-        {activeTab === 'sanitize' && <SanitizationWorkbench />}
-        {activeTab === 'hash' && <HashWorkbench />}
+        <ErrorBoundary key={activeTab} fallbackTitle="Studio Workbench encountered an error">
+          {activeTab === 'schema' && <SchemaWorkbench />}
+          {activeTab === 'jwt' && <JwtStudio />}
+          {activeTab === 'sanitize' && <SanitizationWorkbench />}
+          {activeTab === 'hash' && <HashWorkbench />}
+        </ErrorBoundary>
       </div>
     </div>
   );
@@ -107,8 +121,31 @@ function SchemaWorkbench() {
     data?: unknown;
     error?: unknown;
     durationMs: number;
-  }>(() => preset.validate(JSON.parse(preset.defaultPayload)));
+  }>(() => {
+    try {
+      return preset.validate(JSON.parse(preset.defaultPayload));
+    } catch {
+      return {
+        success: false,
+        error: { issues: [{ path: 'JSON', message: 'Failed to parse default payload' }] },
+        durationMs: 0,
+      };
+    }
+  });
   const [copied, setCopied] = useState(false);
+
+  const handleRunValidation = (payloadText: string = rawPayload) => {
+    try {
+      const parsed = JSON.parse(payloadText);
+      setParseResult(preset.validate(parsed));
+    } catch (err) {
+      setParseResult({
+        success: false,
+        error: { issues: [{ path: 'JSON', message: `Malformed JSON: ${(err as Error).message}` }] },
+        durationMs: 0,
+      });
+    }
+  };
 
   const handleSelectPreset = (key: string) => {
     setSelectedPresetKey(key);
@@ -117,20 +154,11 @@ function SchemaWorkbench() {
     try {
       const parsed = JSON.parse(newPreset.defaultPayload);
       setParseResult(newPreset.validate(parsed));
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleRunValidation = () => {
-    try {
-      const parsed = JSON.parse(rawPayload);
-      setParseResult(preset.validate(parsed));
     } catch (err) {
       setParseResult({
         success: false,
         error: { issues: [{ path: 'JSON', message: `Malformed JSON: ${(err as Error).message}` }] },
-        durationMs: 0.05,
+        durationMs: 0,
       });
     }
   };
@@ -167,12 +195,7 @@ function SchemaWorkbench() {
 
   const resetToValid = () => {
     setRawPayload(preset.defaultPayload);
-    try {
-      const parsed = JSON.parse(preset.defaultPayload);
-      setParseResult(preset.validate(parsed));
-    } catch {
-      // ignore
-    }
+    handleRunValidation(preset.defaultPayload);
   };
 
   const copyResult = () => {
@@ -226,13 +249,9 @@ function SchemaWorkbench() {
             className="payload-textarea font-mono"
             value={rawPayload}
             onChange={(e) => {
-              setRawPayload(e.target.value);
-              try {
-                const parsed = JSON.parse(e.target.value);
-                setParseResult(preset.validate(parsed));
-              } catch {
-                // leave as is until valid json
-              }
+              const val = e.target.value;
+              setRawPayload(val);
+              handleRunValidation(val);
             }}
             rows={8}
             spellCheck="false"
@@ -255,7 +274,7 @@ function SchemaWorkbench() {
             </span>
           </div>
           <div className="card-header-right">
-            <span className="perf-tag font-mono">{parseResult.durationMs.toFixed(2)} ms</span>
+            <span className="perf-tag font-mono" title="single run, this browser">{parseResult.durationMs.toFixed(2)} ms (single run, this browser)</span>
             <button
               type="button"
               className="copy-icon-btn"
@@ -271,7 +290,7 @@ function SchemaWorkbench() {
           {parseResult.success ? (
             <div className="result-pass">
               <div className="result-pass-header">
-                <span className="result-pass-badge">Output Sanitized & Typed</span>
+                <span className="result-pass-badge">Validated & typed</span>
                 <span className="result-pass-note">Schema validation succeeded</span>
               </div>
               <pre className="result-json">
@@ -315,7 +334,7 @@ function JwtStudio() {
 
   // Sign state
   const [secret, setSecret] = useState(
-    'super-secure-production-secret-key-32-chars-long!',
+    'demo-secret-change-me-at-least-32-bytes!!',
   );
   const [subject, setSubject] = useState('user_88291');
   const [issuer, setIssuer] = useState('api.omniguard.dev');
@@ -331,7 +350,7 @@ function JwtStudio() {
   // Verify state
   const [verifyTokenInput, setVerifyTokenInput] = useState<string>('');
   const [verifySecretInput, setVerifySecretInput] = useState<string>(
-    'super-secure-production-secret-key-32-chars-long!',
+    'demo-secret-change-me-at-least-32-bytes!!',
   );
   const [verifyIssuer, setVerifyIssuer] = useState('api.omniguard.dev');
   const [verifyAudience, setVerifyAudience] = useState('omniguard-client');
@@ -346,10 +365,18 @@ function JwtStudio() {
     setSignError(null);
     try {
       let extra: Record<string, unknown> = {};
-      try {
-        extra = JSON.parse(customClaims);
-      } catch {
-        // ignore
+      if (customClaims.trim()) {
+        try {
+          const parsed = JSON.parse(customClaims);
+          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+            setSignError('Custom claims must be a valid JSON object');
+            return;
+          }
+          extra = parsed as Record<string, unknown>;
+        } catch {
+          setSignError('Custom claims must be valid JSON');
+          return;
+        }
       }
 
       const token = await signJWT(
@@ -396,6 +423,8 @@ function JwtStudio() {
 
   // Token breakdown
   const tokenParts = signedToken ? signedToken.split('.') : [];
+  const decodedHeader = tokenParts[0] ? decodeBase64UrlJson(tokenParts[0]) : null;
+  const decodedPayload = tokenParts[1] ? decodeBase64UrlJson(tokenParts[1]) : null;
 
   return (
     <div className="jwt-grid">
@@ -562,24 +591,13 @@ function JwtStudio() {
 
                 <div className="token-claims-preview font-mono">
                   <div className="token-preview-title">Decoded Header:</div>
-                  <pre>{JSON.stringify({ alg: 'HS256', typ: 'JWT' }, null, 2)}</pre>
+                  <pre>{JSON.stringify(decodedHeader ?? { alg: 'HS256', typ: 'JWT' }, null, 2)}</pre>
 
                   <div className="token-preview-title" style={{ marginTop: '14px' }}>
                     Signed Claims Payload:
                   </div>
                   <pre>
-                    {JSON.stringify(
-                      {
-                        sub: subject,
-                        iss: issuer,
-                        aud: audience,
-                        exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
-                        iat: Math.floor(Date.now() / 1000),
-                        ...JSON.parse(customClaims || '{}'),
-                      },
-                      null,
-                      2,
-                    )}
+                    {JSON.stringify(decodedPayload ?? {}, null, 2)}
                   </pre>
                 </div>
               </div>

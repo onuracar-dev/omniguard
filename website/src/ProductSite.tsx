@@ -7,20 +7,19 @@ import {
   Copy,
   Github,
   KeyRound,
-  Lock,
+  LayoutTemplate,
   Menu,
   Package,
-  ShieldCheck,
   Terminal,
   X,
   Braces,
   Code2,
   AlertTriangle,
-  Layers,
   Cpu,
   Sliders,
 } from 'lucide-react';
 import OmniGuardStudio from './components/OmniGuardStudio';
+import ErrorBoundary from './components/ErrorBoundary';
 import { v } from './lib/omniguard-bridge';
 
 const installCommand = 'npm install omniguard';
@@ -53,7 +52,7 @@ const primitivesList = [
     title: 'Runtime Schema Validation',
     badge: 'Core Engine',
     description:
-      'Zero-overhead schemas for strings, finite numbers, arrays, and structured objects. Provides parse() and safeParse() flows with strict type inference.',
+      'Fluent schemas for strings, finite numbers, arrays, and structured objects. Provides parse() and safeParse() flows with strict type inference.',
     snippet: `const schema = v.object({
   email: v.string().trim().email(),
   score: v.number().min(0).max(100),
@@ -162,8 +161,11 @@ export default function ProductSite() {
               aria-selected={currentView === 'showcase'}
               className={`view-tab ${currentView === 'showcase' ? 'view-tab--active' : ''}`}
               onClick={() => setCurrentView('showcase')}
+              title="Overview"
+              aria-label="Overview"
             >
-              Overview
+              <LayoutTemplate size={13} />
+              <span className="view-tab-label">Overview</span>
             </button>
             <button
               type="button"
@@ -171,9 +173,11 @@ export default function ProductSite() {
               aria-selected={currentView === 'studio'}
               className={`view-tab ${currentView === 'studio' ? 'view-tab--active' : ''}`}
               onClick={() => setCurrentView('studio')}
+              title="Studio Workbench"
+              aria-label="Studio Workbench"
             >
               <Sliders size={13} />
-              <span>Studio Workbench</span>
+              <span className="view-tab-label">Studio Workbench</span>
             </button>
           </div>
         </div>
@@ -236,7 +240,9 @@ export default function ProductSite() {
       <main id="main">
         {currentView === 'studio' ? (
           <section className="studio-section">
-            <OmniGuardStudio />
+            <ErrorBoundary fallbackTitle="Studio Workbench encountered an error">
+              <OmniGuardStudio />
+            </ErrorBoundary>
           </section>
         ) : (
           /* SHOWCASE / PRODUCT PROMOTION VIEW */
@@ -377,12 +383,7 @@ export default function ProductSite() {
               <div className="metric-box">
                 <span className="metric-value font-mono">0</span>
                 <span className="metric-label">Runtime Dependencies</span>
-                <span className="metric-sub">Zero supply-chain attack surface</span>
-              </div>
-              <div className="metric-box">
-                <span className="metric-value font-mono">41</span>
-                <span className="metric-label">Passing Unit Tests</span>
-                <span className="metric-sub">Automated Vitest test suite</span>
+                <span className="metric-sub">No runtime dependencies</span>
               </div>
               <div className="metric-box">
                 <span className="metric-value font-mono">HS256</span>
@@ -390,9 +391,9 @@ export default function ProductSite() {
                 <span className="metric-sub">No insecure algorithm fallback</span>
               </div>
               <div className="metric-box">
-                <span className="metric-value font-mono">1.8 KB</span>
-                <span className="metric-label">Gzipped Core</span>
-                <span className="metric-sub">Runs on Cloudflare, Bun, Node, Edge</span>
+                <span className="metric-value font-mono">32 B</span>
+                <span className="metric-label">Secret Floor</span>
+                <span className="metric-sub">Node.js 18+ and Web Crypto runtimes</span>
               </div>
             </section>
 
@@ -467,7 +468,7 @@ export default function ProductSite() {
                       <strong>HS256 Cryptographic Integrity:</strong> Token signatures are authenticated via WebCrypto before claims are unpacked.
                     </li>
                     <li>
-                      <strong>32-Byte Secret Floor:</strong> Strictly enforces minimum entropy on HMAC keys to prevent weak dictionary attacks.
+                      <strong>32-Byte Secret Floor:</strong> Rejects HMAC secrets shorter than 32 bytes. Generate secrets randomly.
                     </li>
                     <li>
                       <strong>Temporal Claim Policies:</strong> Configurable enforcement for exp, nbf, and iat with explicit clock tolerance.
@@ -491,7 +492,7 @@ export default function ProductSite() {
                       <strong>Automatic Key Rotation:</strong> Key management and revocation lifecycle belong in your infrastructure layer.
                     </li>
                     <li>
-                      <strong>Audit Assurance:</strong> Zero independent audit claims. The entire codebase is concise enough to audit in 30 minutes.
+                      <strong>Audit Assurance:</strong> No independent audit.
                     </li>
                   </ul>
                 </div>
@@ -551,7 +552,7 @@ export default function ProductSite() {
                   Keep the boundary small enough to inspect.
                 </h2>
                 <p className="cta-lead">
-                  Designed for modern TypeScript runtimes: Cloudflare Workers, Node.js 18+, Bun, and Deno.
+                  Designed for modern TypeScript runtimes: Node.js 18+ and modern Web Crypto runtimes.
                 </p>
                 <div className="cta-buttons">
                   <button
